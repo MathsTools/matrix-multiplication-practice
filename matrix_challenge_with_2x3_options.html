@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Multiplication Challenge</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#1e293b;--primary:#2563eb}
+body.dark{--bg:#0f172a;--card:#1e293b;--text:#f8fafc}
+body{font-family:Segoe UI,sans-serif;background:var(--bg);color:var(--text);padding:24px;margin:0}
+.card{max-width:1100px;margin:auto;background:var(--card);padding:40px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.1)}
+h1{text-align:center;color:var(--primary)}
+.row,.stats,.controls{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin:25px 0}
+.stat{padding:12px 16px;background:#dbeafe;border-radius:10px}
+.matrix-layout{display:flex;gap:30px;justify-content:center;align-items:center;flex-wrap:wrap;margin:30px 0}
+.matrix-wrapper{position:relative;padding:10px 28px}
+.matrix-wrapper:before,.matrix-wrapper:after{position:absolute;top:50%;transform:translateY(-50%);font-size:90px}
+.matrix-wrapper:before{content:'[';left:0}.matrix-wrapper:after{content:']';right:0}
+.matrix{display:grid;gap:10px}
+.cell{min-width:60px;text-align:center;font-size:1.4rem;font-weight:600}
+.symbol{font-size:2rem}
+.answer-grid{display:grid;gap:10px}
+.answer-grid input{width:60px;height:55px;text-align:center;font-size:1.2rem}
+button,select{padding:12px 18px;border-radius:10px}
+button{background:#2563eb;color:white;border:none;cursor:pointer}
+#message,#solution{display:none;margin-top:20px;padding:15px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>🧮 Matrix Multiplication Challenge</h1>
+<div class="stats">
+<div class="stat">Correct: <span id="correct">0</span></div>
+<div class="stat">Incorrect: <span id="incorrect">0</span></div>
+<div class="stat">Accuracy: <span id="accuracy">0</span>%</div>
+<div class="stat">Streak: <span id="streak">0</span></div>
+<div class="stat">Best: <span id="best">0</span></div>
+</div>
+<div class="row">
+<label>Question Type:</label>
+<select id="type" onchange="generateQuestion()">
+<option value="2x2x2x1" selected>2×2 by 2×1</option>
+<option value="2x2x2x2">2×2 by 2×2</option>
+<option value="2x3x3x1">2×3 by 3×1</option>
+<option value="2x3x3x2">2×3 by 3×2</option>
+<option value="2x3x3x3">2×3 by 3×3</option>
+<option value="3x2x2x1">3×2 by 2×1</option>
+<option value="3x2x2x2">3×2 by 2×2</option>
+<option value="3x3x3x1">3×3 by 3×1</option>
+<option value="3x3x3x2">3×3 by 3×2</option>
+<option value="3x3x3x3">3×3 by 3×3</option>
+</select>
+</div>
+<div class="matrix-layout"><div id="A"></div><div class="symbol">×</div><div id="B"></div><div class="symbol">=</div><div id="inputs"></div></div>
+<div class="controls">
+<button onclick="checkAnswer()">Check Answer</button>
+<button onclick="toggleSolution()">Show / Hide Solution</button>
+<button onclick="generateQuestion()">New Question</button>
+<button onclick="document.body.classList.toggle('dark')">Dark Mode</button>
+</div>
+<div id="message"></div>
+<div id="solution"></div>
+</div>
+<script>
+let A,B,ans,correct=0,incorrect=0,streak=0,best=Number(localStorage.getItem('best')||0);
+document.getElementById('best').textContent=best;
+function rand(){return Math.floor(Math.random()*10)-2}
+function make(r,c){return Array.from({length:r},()=>Array.from({length:c},()=>rand()))}
+function mult(X,Y){let R=[];for(let i=0;i<X.length;i++){R[i]=[];for(let j=0;j<Y[0].length;j++){let s=0;for(let k=0;k<Y.length;k++)s+=X[i][k]*Y[k][j];R[i][j]=s}}return R}
+function show(m,id){const w=document.createElement('div');w.className='matrix-wrapper';const g=document.createElement('div');g.className='matrix';g.style.gridTemplateColumns=`repeat(${m[0].length},auto)`;m.flat().forEach(v=>{const c=document.createElement('div');c.className='cell';c.textContent=v;g.appendChild(c)});w.appendChild(g);document.getElementById(id).replaceChildren(w)}
+function generateQuestion(){const t=document.getElementById('type').value.match(/(\d)x(\d)x(\d)x(\d)/);A=make(+t[1],+t[2]);B=make(+t[3],+t[4]);ans=mult(A,B);show(A,'A');show(B,'B');const d=document.getElementById('inputs');d.className='answer-grid';d.style.gridTemplateColumns=`repeat(${ans[0].length},60px)`;d.innerHTML='';for(let i=0;i<ans.length;i++){for(let j=0;j<ans[0].length;j++){const inp=document.createElement('input');inp.type='number';inp.dataset.r=i;inp.dataset.c=j;d.appendChild(inp)}}document.getElementById('message').style.display='none';document.getElementById('solution').style.display='none';}
+function update(){document.getElementById('correct').textContent=correct;document.getElementById('incorrect').textContent=incorrect;document.getElementById('streak').textContent=streak;document.getElementById('best').textContent=best;document.getElementById('accuracy').textContent=(correct+incorrect)?Math.round(correct*100/(correct+incorrect)):0}
+function checkAnswer(){let ok=true;document.querySelectorAll('#inputs input').forEach(i=>{if(Number(i.value)!==ans[i.dataset.r][i.dataset.c]) ok=false});const m=document.getElementById('message');m.style.display='block';if(ok){correct++;streak++;if(streak>best){best=streak;localStorage.setItem('best',best)}m.style.background='#dcfce7';m.textContent='✓ Correct!'}else{incorrect++;streak=0;m.style.background='#fee2e2';m.textContent='✗ Incorrect'}update()}
+function toggleSolution(){const s=document.getElementById('solution');if(s.style.display==='block'){s.style.display='none';return;}let h='<h3>Worked Solution</h3>';for(let i=0;i<ans.length;i++){for(let j=0;j<ans[0].length;j++){let p=[];for(let k=0;k<B.length;k++)p.push(`(${A[i][k]}×${B[k][j]})`);h+=`<p>${p.join(' + ')} = <b>${ans[i][j]}</b></p>`}}s.innerHTML=h;s.style.display='block'}
+generateQuestion();update();
+</script>
+</body></html>
