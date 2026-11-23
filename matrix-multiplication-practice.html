@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Multiplication Practice</title>
+
+<style>
+body{
+    font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    margin-bottom:20px;
+}
+
+.controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+button,select{
+    padding:10px;
+    font-size:16px;
+}
+
+button{
+    cursor:pointer;
+}
+
+.score{
+    font-weight:bold;
+}
+
+.matrix-container{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:30px;
+    margin:25px 0;
+}
+
+.matrix-bracket{
+    display:flex;
+    align-items:stretch;
+}
+
+.left-bracket{
+    width:10px;
+    border-left:4px solid black;
+    border-top:4px solid black;
+    border-bottom:4px solid black;
+    margin-right:8px;
+}
+
+.right-bracket{
+    width:10px;
+    border-right:4px solid black;
+    border-top:4px solid black;
+    border-bottom:4px solid black;
+    margin-left:8px;
+}
+
+.matrix-table{
+    border-collapse:collapse;
+}
+
+.matrix-table td{
+    padding:6px 12px;
+    text-align:center;
+    font-size:18px;
+}
+
+.answer-input{
+    width:65px;
+    height:40px;
+    text-align:center;
+    font-size:18px;
+}
+
+.correct{
+    background:#c8f7c5;
+    border:2px solid green;
+}
+
+.incorrect{
+    background:#ffc7c7;
+    border:2px solid red;
+}
+
+.solution{
+    border-top:1px solid #ccc;
+    margin-top:30px;
+    padding-top:20px;
+    display:none;
+}
+
+.result{
+    margin-top:15px;
+    font-weight:bold;
+    font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Matrix Multiplication Practice</h1>
+
+<div class="controls">
+    <select id="questionType">
+        <option value="0">2×2 by 2×1</option>
+        <option value="1">2×2 by 2×2</option>
+        <option value="2">3×3 by 3×1</option>
+        <option value="3">3×3 by 3×2</option>
+        <option value="4">3×3 by 3×3</option>
+    </select>
+
+    <button onclick="newQuestion()">New Question</button>
+
+    <button onclick="checkAnswer()">Check Answer</button>
+
+    <button onclick="toggleSolution()">
+        Show / Hide Worked Solution
+    </button>
+
+    <span class="score">
+        Score: <span id="score">0</span> /
+        <span id="attempts">0</span>
+    </span>
+</div>
+
+<div id="questionArea"></div>
+
+<h2>Your Answer</h2>
+<div id="answerArea"></div>
+
+<div id="result" class="result"></div>
+
+<div id="solution" class="solution">
+    <h2>Worked Solution</h2>
+    <div id="working"></div>
+
+    <h3>Correct Answer</h3>
+    <div id="correctAnswer"></div>
+</div>
+
+<script>
+
+const questionTypes = [
+    {a:[2,2], b:[2,1]},
+    {a:[2,2], b:[2,2]},
+    {a:[3,3], b:[3,1]},
+    {a:[3,3], b:[3,2]},
+    {a:[3,3], b:[3,3]}
+];
+
+let matrixA;
+let matrixB;
+let answerMatrix;
+
+let score = 0;
+let attempts = 0;
+
+function randomMatrix(rows, cols){
+    return Array.from({length:rows},() =>
+        Array.from({length:cols},
+        () => Math.floor(Math.random()*11)-5)
+    );
+}
+
+function multiplyMatrices(A,B){
+
+    const result = [];
+
+    for(let r=0;r<A.length;r++){
+
+        const row = [];
+
+        for(let c=0;c<B[0].length;c++){
+
+            let total = 0;
+
+            for(let k=0;k<B.length;k++){
+                total += A[r][k]*B[k][c];
+            }
+
+            row.push(total);
+        }
+
+        result.push(row);
+    }
+
+    return result;
+}
+
+function createMatrixHTML(matrix, inputs=false){
+
+    let html = `
+    <div class="matrix-bracket">
+        <div class="left-bracket"></div>
+
+        <table class="matrix-table">
+    `;
+
+    matrix.forEach((row,r)=>{
+
+        html += "<tr>";
+
+        row.forEach((value,c)=>{
+
+            if(inputs){
+
+                html += `
+                <td>
+                    <input
+                        class="answer-input"
+                        id="cell-${r}-${c}"
+                        autocomplete="off"
+                    >
+                </td>
+                `;
+
+            } else {
+
+                html += `<td>${value}</td>`;
+
+            }
+
+        });
+
+        html += "</tr>";
+    });
+
+    html += `
+        </table>
+        <div class="right-bracket"></div>
+    </div>
+    `;
+
+    return html;
+}
+
+function newQuestion(){
+
+    const config =
+    questionTypes[
+        document.getElementById("questionType").value
+    ];
+
+    matrixA =
+    randomMatrix(config.a[0],config.a[1]);
+
+    matrixB =
+    randomMatrix(config.b[0],config.b[1]);
+
+    answerMatrix =
+    multiplyMatrices(matrixA,matrixB);
+
+    document.getElementById("questionArea").innerHTML = `
+        <div class="matrix-container">
+            ${createMatrixHTML(matrixA)}
+            <div style="font-size:40px">×</div>
+            ${createMatrixHTML(matrixB)}
+        </div>
+    `;
+
+    document.getElementById("answerArea").innerHTML =
+    createMatrixHTML(answerMatrix,true);
+
+    document.getElementById("result").innerHTML = "";
+
+    document.getElementById("solution").style.display="none";
+
+    document.getElementById("working").innerHTML="";
+    document.getElementById("correctAnswer").innerHTML="";
+}
+
+function checkAnswer(){
+
+    let allCorrect = true;
+
+    answerMatrix.forEach((row,r)=>{
+
+        row.forEach((value,c)=>{
+
+            const box =
+            document.getElementById(`cell-${r}-${c}`);
+
+            const entered =
+            Number(box.value);
+
+            box.classList.remove(
+                "correct",
+                "incorrect"
+            );
+
+            if(entered === value){
+
+                box.classList.add("correct");
+
+            } else {
+
+                box.classList.add("incorrect");
+                allCorrect = false;
+            }
+        });
+    });
+
+    attempts++;
+
+    document.getElementById("attempts").innerText =
+    attempts;
+
+    if(allCorrect){
+
+        score++;
+
+        document.getElementById("score").innerText =
+        score;
+
+        document.getElementById("result").innerHTML =
+        "✅ Correct";
+
+    } else {
+
+        document.getElementById("result").innerHTML =
+        "❌ Some answers are incorrect";
+    }
+}
+
+function toggleSolution(){
+
+    const solution =
+    document.getElementById("solution");
+
+    if(solution.style.display === "block"){
+
+        solution.style.display = "none";
+        return;
+    }
+
+    buildSolution();
+
+    solution.style.display = "block";
+}
+
+function buildSolution(){
+
+    let html = "";
+
+    answerMatrix.forEach((row,r)=>{
+
+        row.forEach((value,c)=>{
+
+            const working = matrixA[r]
+            .map(
+                (v,k) =>
+                `${v} × ${matrixB[k][c]}`
+            )
+            .join(" + ");
+
+            html += `
+            <p>
+            Entry (${r+1},${c+1})
+            = ${working}
+            = <strong>${value}</strong>
+            </p>
+            `;
+        });
+    });
+
+    document.getElementById("working").innerHTML =
+    html;
+
+    document.getElementById("correctAnswer").innerHTML =
+    createMatrixHTML(answerMatrix);
+}
+
+document.getElementById("questionType")
+    .addEventListener(
+        "change",
+        newQuestion
+    );
+
+newQuestion();
+
+</script>
+
+</body>
+</html>
